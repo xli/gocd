@@ -1,7 +1,7 @@
 package com.thoughtworks.go.plugin.infra.commons;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.junit.Test;
+import org.springframework.http.HttpStatus;
 
 import java.io.FileNotFoundException;
 import java.util.HashMap;
@@ -24,7 +24,7 @@ public class PluginUploadResponseTest {
     @Test
     public void shouldCreateAResponseWithErrors() {
         Map<Integer, String> errors = new HashMap<Integer, String>();
-        int errorCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+        int errorCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
         String errorMessage = new FileNotFoundException().getMessage();
         errors.put(errorCode, errorMessage);
 

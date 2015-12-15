@@ -18,6 +18,7 @@ package com.thoughtworks.go.agent.service;
 
 import java.io.IOException;
 
+import com.thoughtworks.go.agent.ResetableHttpClient;
 import com.thoughtworks.go.agent.testhelpers.AgentCertificateMother;
 import com.thoughtworks.go.config.AgentRegistrationPropertiesReader;
 import com.thoughtworks.go.config.AgentRegistry;
@@ -29,6 +30,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.log4j.Logger;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -37,6 +39,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.net.ssl.SSLContext;
 
 import static com.thoughtworks.go.util.TestUtils.exists;
 import static org.hamcrest.core.Is.is;
@@ -49,7 +53,6 @@ public class SslInfrastructureServiceTest {
     private final Mockery context = new ClassMockery();
     private SslInfrastructureService sslInfrastructureService;
     private boolean remoteCalled;
-    private HttpConnectionManagerParams httpConnectionManagerParams = new HttpConnectionManagerParams();
 
     @Before
     public void setup() throws Exception {
@@ -57,7 +60,7 @@ public class SslInfrastructureServiceTest {
         SslInfrastructureService.AGENT_CERTIFICATE_FILE.delete();
         SslInfrastructureService.AGENT_CERTIFICATE_FILE.deleteOnExit();
         Registration registration = createRegistration();
-        sslInfrastructureService = new SslInfrastructureService(requesterStub(registration), httpClientStub(), httpConnectionManagerParams);
+        sslInfrastructureService = new SslInfrastructureService(requesterStub(registration), httpClientStub());
         GuidService.storeGuid("uuid");
     }
 
@@ -108,7 +111,7 @@ public class SslInfrastructureServiceTest {
 
     private SslInfrastructureService.RemoteRegistrationRequester requesterStub(final Registration registration) {
         final SslInfrastructureServiceTest me = this;
-        return new SslInfrastructureService.RemoteRegistrationRequester(null, agentRegistryStub(), new HttpClient()) {
+        return new SslInfrastructureService.RemoteRegistrationRequester(null, agentRegistryStub(), HttpClients.createDefault()) {
             protected Registration requestRegistration(String agentHostName, AgentRegistrationPropertiesReader agentAutoRegisterProperties)
                     throws IOException, ClassNotFoundException {
                 LOGGER.debug("Requesting remote registration");
@@ -118,13 +121,11 @@ public class SslInfrastructureServiceTest {
         };
     }
 
-    private HttpClient httpClientStub() {
-        final HttpClient client = context.mock(HttpClient.class);
+    private ResetableHttpClient httpClientStub() {
+        final ResetableHttpClient client = context.mock(ResetableHttpClient.class);
         context.checking(new Expectations() {
             {
-                allowing(client).setHttpConnectionManager(with(any(MultiThreadedHttpConnectionManager.class)));
-                allowing(client).getHttpConnectionManager();
-                will(returnValue(new MultiThreadedHttpConnectionManager()));
+                allowing(client).reset();
             }
         });
         return client;

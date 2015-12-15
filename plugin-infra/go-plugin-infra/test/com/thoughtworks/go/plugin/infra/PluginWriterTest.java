@@ -3,7 +3,6 @@ package com.thoughtworks.go.plugin.infra;
 import com.thoughtworks.go.plugin.infra.commons.GoFileSystem;
 import com.thoughtworks.go.plugin.infra.commons.PluginUploadResponse;
 import com.thoughtworks.go.util.SystemEnvironment;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -11,6 +10,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.http.HttpStatus;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,7 +80,7 @@ public class PluginWriterTest {
         PluginUploadResponse response = pluginWriter.addPlugin(SRC_FILE, SRC_FILE.getName());
 
         assertFalse(response.isSuccess());
-        assertTrue(response.errors().containsKey(HttpStatus.SC_INTERNAL_SERVER_ERROR));
+        assertTrue(response.errors().containsKey(HttpStatus.INTERNAL_SERVER_ERROR.value()));
 
     }
 

@@ -21,6 +21,7 @@ import com.thoughtworks.go.database.QueryExtensions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import com.thoughtworks.go.server.cache.GoCache;
 import com.thoughtworks.go.server.database.DatabaseStrategy;
@@ -61,7 +62,7 @@ public class PipelineRepositoryTest {
         PipelineSelections pipelineSelections = new PipelineSelections();
         long userId = 1L;
 
-        when(hibernateTemplate.find(queryString, new Object[]{userId})).thenReturn(Arrays.asList(pipelineSelections));
+        when(hibernateTemplate.find(queryString, new Object[]{userId})).thenReturn((List) Arrays.asList(pipelineSelections));
         //return false for first 2 calls and return true for next call
         when(goCache.isKeyInCache(pipelineRepository.pipelineSelectionForUserIdKey(userId))).thenReturn(false).thenReturn(false).thenReturn(true);
 

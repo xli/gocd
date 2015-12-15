@@ -80,7 +80,7 @@ public class ConfigDbStateRepositoryIntegrationTest {
 
         configDbStateRepository.flushConfigState();
 
-        List<StageArtifactCleanupProhibited> list = configDbStateRepository.getHibernateTemplate().find("from StageArtifactCleanupProhibited");
+        List<StageArtifactCleanupProhibited> list = (List<StageArtifactCleanupProhibited>) configDbStateRepository.getHibernateTemplate().find("from StageArtifactCleanupProhibited");
         assertThat(list.size(), is(5));
 
         assertThat(list, hasItem(new StageArtifactCleanupProhibited("pipeline-one", "stage-zero", false)));
@@ -105,7 +105,7 @@ public class ConfigDbStateRepositoryIntegrationTest {
 
         configDbStateRepository.flushConfigState();
 
-        List<StageArtifactCleanupProhibited> list = configDbStateRepository.getHibernateTemplate().find("from StageArtifactCleanupProhibited");
+        List<StageArtifactCleanupProhibited> list = (List<StageArtifactCleanupProhibited>) configDbStateRepository.getHibernateTemplate().find("from StageArtifactCleanupProhibited");
         assertThat(list.size(), is(2));
 
         assertThat(list, hasItem(new StageArtifactCleanupProhibited("pipeline-one", "stage-zero", false)));
@@ -127,7 +127,7 @@ public class ConfigDbStateRepositoryIntegrationTest {
 
         configDbStateRepository.flushConfigState();
 
-        List<StageArtifactCleanupProhibited> list = configDbStateRepository.getHibernateTemplate().find("from StageArtifactCleanupProhibited");
+        List<StageArtifactCleanupProhibited> list = (List<StageArtifactCleanupProhibited>) configDbStateRepository.getHibernateTemplate().find("from StageArtifactCleanupProhibited");
         assertThat(list.size(), is(2));
 
         assertThat(list, hasItem(new StageArtifactCleanupProhibited("pipeline-one", "stage-zero", false)));

@@ -3,8 +3,8 @@ package com.thoughtworks.go.plugin.infra;
 import com.thoughtworks.go.plugin.infra.commons.GoFileSystem;
 import com.thoughtworks.go.plugin.infra.commons.PluginUploadResponse;
 import com.thoughtworks.go.util.SystemEnvironment;
-import org.apache.commons.httpclient.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -33,7 +33,7 @@ public class PluginWriter {
             return PluginUploadResponse.create(true, "Your file is saved!", null);
         } catch (Exception e) {
             Map<Integer, String> errors = new HashMap<Integer, String>();
-            errors.put(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Your file is not saved. Please try again.");
+            errors.put(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Your file is not saved. Please try again.");
             return PluginUploadResponse.create(false, null, errors);
         }
     }

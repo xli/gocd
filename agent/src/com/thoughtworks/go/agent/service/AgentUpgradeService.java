@@ -16,12 +16,13 @@
 
 package com.thoughtworks.go.agent.service;
 
+import com.thoughtworks.go.agent.ResetableHttpClient;
 import com.thoughtworks.go.util.SystemEnvironment;
 import com.thoughtworks.go.util.URLService;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -49,16 +50,17 @@ public class AgentUpgradeService {
     }
 
     void checkForUpgrade(String md5, String launcherMd5, String agentPluginsMd5) throws Exception {
-        HttpMethod method = getAgentLatestStatusGetMethod();
+        HttpGet method = getAgentLatestStatusGetMethod();
         try {
-            final int status = httpClient.executeMethod(method);
+            HttpResponse response = httpClient.execute(method);
+            final int status = response.getStatusLine().getStatusCode();
             if (status != 200) {
-                LOGGER.error(String.format("[Agent Upgrade] Got status %d %s from Go", status, method.getStatusText()));
+                LOGGER.error(String.format("[Agent Upgrade] Got status %d %s from Go", status, response.getStatusLine().getReasonPhrase()));
                 return;
             }
-            validateIfLatestAgent(md5, method);
-            validateIfLatestLauncher(launcherMd5, method);
-            validateIfLatestPluginZipAvailable(agentPluginsMd5, method);
+            validateIfLatestAgent(md5, response);
+            validateIfLatestLauncher(launcherMd5, response);
+            validateIfLatestPluginZipAvailable(agentPluginsMd5, response);
         } catch (IOException ioe) {
             String message = String.format("[Agent Upgrade] Couldn't connect to: %s: %s", urlService.getAgentLatestStatusUrl(), ioe.toString());
             LOGGER.error(message);
@@ -69,8 +71,8 @@ public class AgentUpgradeService {
         }
     }
 
-    private void validateIfLatestPluginZipAvailable(String agentPluginsMd5, HttpMethod method) {
-        final Header newLauncherMd5 = method.getResponseHeader(SystemEnvironment.AGENT_PLUGINS_ZIP_MD5_HEADER);
+    private void validateIfLatestPluginZipAvailable(String agentPluginsMd5, HttpResponse response) {
+        final Header newLauncherMd5 = response.getFirstHeader(SystemEnvironment.AGENT_PLUGINS_ZIP_MD5_HEADER);
         if (!"".equals(agentPluginsMd5)) {
             if (!agentPluginsMd5.equals(newLauncherMd5.getValue())) {
                 LOGGER.fatal(
@@ -82,8 +84,8 @@ public class AgentUpgradeService {
         }
     }
 
-    private void validateIfLatestLauncher(String launcherMd5, HttpMethod method) {
-        final Header newLauncherMd5 = method.getResponseHeader(SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER);
+    private void validateIfLatestLauncher(String launcherMd5, HttpResponse response) {
+        final Header newLauncherMd5 = response.getFirstHeader(SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER);
         if (!"".equals(launcherMd5)) {
             if (!launcherMd5.equals(newLauncherMd5.getValue())) {
                 LOGGER.fatal(
@@ -94,16 +96,16 @@ public class AgentUpgradeService {
         }
     }
 
-    private void validateIfLatestAgent(String md5, HttpMethod method) {
-        final Header newAgentMd5 = method.getResponseHeader(SystemEnvironment.AGENT_CONTENT_MD5_HEADER);
+    private void validateIfLatestAgent(String md5, HttpResponse response) {
+        final Header newAgentMd5 = response.getFirstHeader(SystemEnvironment.AGENT_CONTENT_MD5_HEADER);
         if (!md5.equals(newAgentMd5.getValue())) {
             LOGGER.fatal(String.format("[Agent Upgrade] Agent needs to upgrade itself. Currently has md5 [%s] but server version has md5 [%s]. Exiting.", md5, newAgentMd5));
             jvmExit();
         }
     }
 
-    GetMethod getAgentLatestStatusGetMethod() {
-        return new GetMethod(urlService.getAgentLatestStatusUrl());
+    HttpGet getAgentLatestStatusGetMethod() {
+        return new HttpGet(urlService.getAgentLatestStatusUrl());
     }
 
     void jvmExit() {

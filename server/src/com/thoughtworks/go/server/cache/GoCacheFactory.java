@@ -32,6 +32,7 @@ public class GoCacheFactory {
     private String diskStorePath;
     private EhCacheFactoryBean factoryBean;
     private Boolean clearOnFlush = true;
+    private int count = 1;
 
     static {
         System.setProperty("net.sf.ehcache.skipUpdateCheck", "true");
@@ -66,7 +67,7 @@ public class GoCacheFactory {
     }
 
     public void setMemoryStoreEvictionPolicy(MemoryStoreEvictionPolicy memoryStoreEvictionPolicy) {
-        factoryBean.setMemoryStoreEvictionPolicy(memoryStoreEvictionPolicy);
+        factoryBean.setMemoryStoreEvictionPolicy(memoryStoreEvictionPolicy.toString());
     }
 
     public void setOverflowToDisk(boolean overflowToDisk) {
@@ -106,7 +107,8 @@ public class GoCacheFactory {
         configuration.setUpdateCheck(false);
         configuration.addDiskStore(diskStore());
         configuration.setDefaultCacheConfiguration(new CacheConfiguration("cache", 10000));
-        return new CacheManager(configuration);
+        configuration.setName("GoCacheFactory");
+        return CacheManager.create(configuration);
     }
 
     private DiskStoreConfiguration diskStore() {

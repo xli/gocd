@@ -31,10 +31,10 @@ import com.thoughtworks.go.plugin.infra.plugininfo.DefaultPluginRegistry;
 import com.thoughtworks.go.plugin.infra.plugininfo.GoPluginDescriptor;
 import com.thoughtworks.go.util.FileUtil;
 import com.thoughtworks.go.util.SystemEnvironment;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -88,7 +88,7 @@ public class DefaultPluginManager implements PluginManager {
     public PluginUploadResponse addPlugin(File uploadedPlugin, String filename) {
         if (!pluginValidator.namecheckForJar(filename)) {
             Map<Integer, String> errors = new HashMap<Integer, String>();
-            errors.put(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Please upload a jar.");
+            errors.put(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(), "Please upload a jar.");
             return PluginUploadResponse.create(false, null, errors);
         }
         return pluginWriter.addPlugin(uploadedPlugin, filename);

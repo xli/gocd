@@ -129,7 +129,7 @@ public class TestVelocityView extends VelocityView {
 
     /* Represents "tools" setup in toolbox.vm. Part of setup of velocity. */
     private void setupToolAttributes() {
-        HashMap<String, Class> toolAttributes = new HashMap<String, Class>();
+        HashMap<String, Class<?>> toolAttributes = new HashMap<String, Class<?>>();
         toolAttributes.put("esc", org.apache.velocity.tools.generic.EscapeTool.class);
         toolAttributes.put("util", com.thoughtworks.go.server.util.WebUtils.class);
         setToolAttributes(toolAttributes);

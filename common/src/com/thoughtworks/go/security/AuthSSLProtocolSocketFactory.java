@@ -52,6 +52,9 @@ import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHost;
+import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
+import org.apache.http.protocol.HttpContext;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.KeyManager;
@@ -60,10 +63,7 @@ import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
+import java.net.*;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
@@ -138,7 +138,7 @@ public class AuthSSLProtocolSocketFactory implements SecureProtocolSocketFactory
         Protocol.registerProtocol("https", new Protocol("https", (ProtocolSocketFactory) this, 443));
     }
 
-    SSLContext getSSLContext() {
+    public SSLContext getSSLContext() {
         if (this.sslContextWithKeyStore == null || isEmptyKeyStore()) {
             this.sslContextWithKeyStore = createSSLContext(true);
         }
@@ -234,4 +234,5 @@ public class AuthSSLProtocolSocketFactory implements SecureProtocolSocketFactory
             throws IOException {
         return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
     }
+
 }

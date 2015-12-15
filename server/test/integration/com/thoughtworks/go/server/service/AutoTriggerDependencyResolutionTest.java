@@ -51,7 +51,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.ExpectedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -2420,8 +2419,7 @@ public class AutoTriggerDependencyResolutionTest {
 
     }
 
-    @Test
-    @ExpectedException(MaxBackTrackLimitReachedException.class)
+    @Test(expected = MaxBackTrackLimitReachedException.class)
     public void shouldResolveSimpleDiamondAndThrowLimitException() {
         int i = 1;
         GitMaterial git1 = u.wf(new GitMaterial("git1"), "folder");
@@ -2455,8 +2453,7 @@ public class AutoTriggerDependencyResolutionTest {
         getRevisionsBasedOnDependencies(p4, cruiseConfig, given);
     }
 
-    @Test(timeout = 10 * 1000)
-    @ExpectedException(NoCompatibleUpstreamRevisionsException.class)
+    @Test(timeout = 10 * 1000, expected = NoCompatibleUpstreamRevisionsException.class)
     public void shouldContinueBackTrackingFromItsLastKnownPositionAndNotFromTheBeginning() {
         int i = 1;
         GitMaterial git1 = u.wf(new GitMaterial("git1"), "folder1");

@@ -18,9 +18,12 @@ package com.thoughtworks.go.agent.service;
 
 import com.thoughtworks.go.util.SystemEnvironment;
 import com.thoughtworks.go.util.URLService;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.message.BasicStatusLine;
 import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +43,8 @@ public class AgentUpgradeServiceTest {
     private SystemEnvironment systemEnvironment;
     private URLService urlService;
     private AgentUpgradeService agentUpgradeService;
-    private GetMethod httpMethod;
+    private HttpGet httpMethod;
+    private HttpResponse response;
 
     @Before
     public void setUp() throws Exception {
@@ -49,16 +53,19 @@ public class AgentUpgradeServiceTest {
         HttpClient httpClient = mock(HttpClient.class);
         agentUpgradeService = spy(new AgentUpgradeService(urlService, httpClient, systemEnvironment));
 
-        httpMethod = mock(GetMethod.class);
+        httpMethod = mock(HttpGet.class);
         doReturn(httpMethod).when(agentUpgradeService).getAgentLatestStatusGetMethod();
-        when(httpClient.executeMethod(httpMethod)).thenReturn(200);
+
+        response = mock(HttpResponse.class);
+        when(response.getStatusLine()).thenReturn(new BasicStatusLine(new ProtocolVersion("http", 1, 1), 200, "OK"));
+        when(httpClient.execute(httpMethod)).thenReturn(response);
     }
 
     @Test
     public void checkForUpgradeShouldKillAgentIfAgentMD5doesNotMatch() throws Exception {
         when(systemEnvironment.getAgentMd5()).thenReturn("old-md5");
 
-        expectHeaderValue(httpMethod, SystemEnvironment.AGENT_CONTENT_MD5_HEADER, "new-md5");
+        expectHeaderValue(response, SystemEnvironment.AGENT_CONTENT_MD5_HEADER, "new-md5");
 
         doThrow(new RuntimeException("Agent md5 mismatch")).when(agentUpgradeService).jvmExit();
 
@@ -68,7 +75,7 @@ public class AgentUpgradeServiceTest {
         } catch (RuntimeException e) {
             assertThat(e.getMessage(), Is.is("Agent md5 mismatch"));
         }
-        verify(httpMethod, never()).getResponseHeader(SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER);
+        verify(httpMethod, never()).getFirstHeader(SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER);
 
     }
 
@@ -77,8 +84,8 @@ public class AgentUpgradeServiceTest {
         when(systemEnvironment.getAgentMd5()).thenReturn("latest-md5");
         when(systemEnvironment.getGivenAgentLauncherMd5()).thenReturn("old-md5");
 
-        expectHeaderValue(httpMethod, SystemEnvironment.AGENT_CONTENT_MD5_HEADER, "latest-md5");
-        expectHeaderValue(httpMethod, SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER, "new-md5");
+        expectHeaderValue(response, SystemEnvironment.AGENT_CONTENT_MD5_HEADER, "latest-md5");
+        expectHeaderValue(response, SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER, "new-md5");
 
         doThrow(new RuntimeException("Agent Launcher md5 mismatch")).when(agentUpgradeService).jvmExit();
 
@@ -96,9 +103,9 @@ public class AgentUpgradeServiceTest {
         when(systemEnvironment.getGivenAgentLauncherMd5()).thenReturn("latest-md5");
         when(systemEnvironment.getAgentPluginsMd5()).thenReturn("latest-md5");
 
-        expectHeaderValue(httpMethod, SystemEnvironment.AGENT_CONTENT_MD5_HEADER, "latest-md5");
-        expectHeaderValue(httpMethod, SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER, "latest-md5");
-        expectHeaderValue(httpMethod, SystemEnvironment.AGENT_PLUGINS_ZIP_MD5_HEADER, "latest-md5");
+        expectHeaderValue(response, SystemEnvironment.AGENT_CONTENT_MD5_HEADER, "latest-md5");
+        expectHeaderValue(response, SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER, "latest-md5");
+        expectHeaderValue(response, SystemEnvironment.AGENT_PLUGINS_ZIP_MD5_HEADER, "latest-md5");
 
         doThrow(new RuntimeException("Agent Launcher md5 mismatch")).when(agentUpgradeService).jvmExit();
 
@@ -115,9 +122,9 @@ public class AgentUpgradeServiceTest {
         when(systemEnvironment.getGivenAgentLauncherMd5()).thenReturn("latest-md5");
         when(systemEnvironment.getAgentPluginsMd5()).thenReturn("old-md5");
 
-        expectHeaderValue(httpMethod, SystemEnvironment.AGENT_CONTENT_MD5_HEADER, "latest-md5");
-        expectHeaderValue(httpMethod, SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER, "latest-md5");
-        expectHeaderValue(httpMethod, SystemEnvironment.AGENT_PLUGINS_ZIP_MD5_HEADER, "latest-md5");
+        expectHeaderValue(response, SystemEnvironment.AGENT_CONTENT_MD5_HEADER, "latest-md5");
+        expectHeaderValue(response, SystemEnvironment.AGENT_LAUNCHER_CONTENT_MD5_HEADER, "latest-md5");
+        expectHeaderValue(response, SystemEnvironment.AGENT_PLUGINS_ZIP_MD5_HEADER, "latest-md5");
 
 
         doThrow(new RuntimeException("Agent Plugins md5 mismatch")).when(agentUpgradeService).jvmExit();
@@ -126,13 +133,14 @@ public class AgentUpgradeServiceTest {
             agentUpgradeService.checkForUpgrade();
             fail("should have done jvm exit");
         } catch (RuntimeException e) {
+            e.printStackTrace();
             assertThat(e.getMessage(), Is.is("Agent Plugins md5 mismatch"));
         }
     }
 
-    private void expectHeaderValue(GetMethod getMethod, final String headerName, final String headerValue) {
+    private void expectHeaderValue(HttpResponse response, final String headerName, final String headerValue) {
         Header header = mock(Header.class);
-        when(getMethod.getResponseHeader(headerName)).thenReturn(header);
+        when(response.getFirstHeader(headerName)).thenReturn(header);
         when(header.getValue()).thenReturn(headerValue);
     }
 }

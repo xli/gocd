@@ -32,20 +32,6 @@ public class SqlMapClientFactory extends org.springframework.orm.ibatis.SqlMapCl
         this.databaseStrategy = databaseStrategy;
     }
 
-    @Override
-    public void setConfigLocation(Resource configLocation) {
-        if (configLocation != null) {
-            this.setConfigLocations(new Resource[]{configLocation});
-        } else {
-            super.setConfigLocation(configLocation);
-        }
-    }
-
-    @Override
-    public void setConfigLocations(Resource[] configLocations) {
-        super.setConfigLocations(addToConfigLocations(configLocations, databaseStrategy.getIbatisConfigXmlLocation()));
-    }
-
     private Resource[] addToConfigLocations(Resource[] configLocations, String ibatisConfigXmlLocation) {
         if (isBlank(ibatisConfigXmlLocation)) {
             return configLocations;

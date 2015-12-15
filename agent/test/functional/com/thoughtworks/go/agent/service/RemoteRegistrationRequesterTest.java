@@ -18,6 +18,10 @@ package com.thoughtworks.go.agent.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import com.thoughtworks.go.config.AgentRegistrationPropertiesReader;
@@ -25,18 +29,24 @@ import com.thoughtworks.go.config.DefaultAgentRegistry;
 import com.thoughtworks.go.security.Registration;
 import com.thoughtworks.go.util.SystemEnvironment;
 import com.thoughtworks.go.util.SystemUtil;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.http.Consts;
+import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.hamcrest.TypeSafeMatcher;
 import org.mockito.Mockito;
+import org.springframework.util.StreamUtils;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.verify;
 
@@ -66,22 +76,34 @@ public class RemoteRegistrationRequesterTest {
         properties.put(AgentRegistrationPropertiesReader.AGENT_AUTO_REGISTER_HOSTNAME, "agent01.example.com");
 
         remoteRegistryRequester(url, httpClient, defaultAgentRegistry).requestRegistration("cruise.com", new AgentRegistrationPropertiesReader(properties));
-        verify(httpClient).executeMethod(argThat(hasAllParams(defaultAgentRegistry.uuid())));
+        verify(httpClient).execute(argThat(hasAllParams(defaultAgentRegistry.uuid())));
     }
 
-    private TypeSafeMatcher<HttpMethod> hasAllParams(final String uuid) {
-        return new TypeSafeMatcher<HttpMethod>() {
-            @Override public boolean matchesSafely(HttpMethod item) {
-                PostMethod postMethod = (PostMethod) item;
-                assertThat(postMethod.getParameter("hostname").getValue(),is("cruise.com"));
-                assertThat(postMethod.getParameter("uuid").getValue(),is(uuid));
+    private TypeSafeMatcher<HttpPost> hasAllParams(final String uuid) {
+        return new TypeSafeMatcher<HttpPost>() {
+            @Override public boolean matchesSafely(HttpPost item) {
+                HttpPost postMethod = (HttpPost) item;
+                List<NameValuePair> pairs = null;
+                try {
+                    pairs = URLEncodedUtils.parse(postMethod.getEntity());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                Map<String, String> params = new HashMap<String, String>();
+                for (NameValuePair p : pairs) {
+                    params.put(p.getName(), p.getValue());
+                }
+
+                assertThat(params.get("hostname"),is("cruise.com"));
+
+                assertThat(params.get("uuid"),is(uuid));
                 String workingDir = SystemUtil.currentWorkingDirectory();
-                assertThat(postMethod.getParameter("location").getValue(),is(workingDir));
-                assertThat(postMethod.getParameter("operating_system").getValue(),is("minix"));
-                assertThat(postMethod.getParameter("agentAutoRegisterKey").getValue(),is("t0ps3cret"));
-                assertThat(postMethod.getParameter("agentAutoRegisterResources").getValue(),is("linux, java"));
-                assertThat(postMethod.getParameter("agentAutoRegisterEnvironments").getValue(),is("uat, staging"));
-                assertThat(postMethod.getParameter("agentAutoRegisterHostname").getValue(),is("agent01.example.com"));
+                assertThat(params.get("location"),is(workingDir));
+                assertThat(params.get("operating_system"),is("minix"));
+                assertThat(params.get("agentAutoRegisterKey"),is("t0ps3cret"));
+                assertThat(params.get("agentAutoRegisterResources"),is("linux, java"));
+                assertThat(params.get("agentAutoRegisterEnvironments"),is("uat, staging"));
+                assertThat(params.get("agentAutoRegisterHostname"),is("agent01.example.com"));
                 return true;
             }
 

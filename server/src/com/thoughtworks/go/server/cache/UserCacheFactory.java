@@ -43,7 +43,7 @@ public class UserCacheFactory {
         factoryBean.setOverflowToDisk(false);
         factoryBean.setMaxElementsInMemory(1000);
         factoryBean.setEternal(true);
-        factoryBean.setMemoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU);
+        factoryBean.setMemoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.LRU.toString());
         factoryBean.afterPropertiesSet();
         return (Cache) factoryBean.getObject();
 
@@ -52,6 +52,7 @@ public class UserCacheFactory {
     private CacheManager createCacheManager() throws UnsupportedEncodingException {
         Configuration configuration = new Configuration();
         configuration.setDefaultCacheConfiguration(new CacheConfiguration("cache", 10000));
-        return new CacheManager(configuration);
+        configuration.setName("UserCacheFactory");
+        return CacheManager.create(configuration);
     }
 }

@@ -39,6 +39,7 @@
         <db.password></db.password>
         <db.name>cruise</db.name>
         <db.port></db.port>
+        <hibernate.version>3.6.10.Final</hibernate.version>
     </properties>
 
     <dependencies>
@@ -141,7 +142,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-ehcache</artifactId>
-            <version>3.3.2.GA</version>
+            <version>${hibernate.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
@@ -150,17 +151,6 @@
                 <exclusion>
                     <groupId>commons-collections</groupId>
                     <artifactId>commons-collections</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-annotations</artifactId>
-            <version>3.4.0.GA</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -177,7 +167,7 @@
         <dependency>
             <groupId>net.sf.ehcache</groupId>
             <artifactId>ehcache-core</artifactId>
-            <version>2.0.0</version>
+            <version>2.6.11</version>
         </dependency>
         <dependency>
             <groupId>opensymphony</groupId>
@@ -242,18 +232,48 @@
             <artifactId>spring-web</artifactId>
             <version>${spring.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-ibatis</artifactId>
+            <version>2.0.8</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.ibatis</groupId>
+                    <artifactId>ibatis-sqlmap</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-beans</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-dao</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-jdbc</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <dependency>
             <groupId>com.unboundid</groupId>
             <artifactId>unboundid-ldapsdk</artifactId>
             <version>2.3.6</version>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>web.servlet</artifactId>
-            <version>${spring.version}</version>
         </dependency>
 
         <!-- security -->
@@ -624,6 +644,10 @@
                     <groupId>xalan</groupId>
                     <artifactId>xalan</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -632,6 +656,16 @@
             <artifactId>jsoup</artifactId>
             <version>1.8.1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-servlet</artifactId>
+            <version>9.2.11.v20150529</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-client</artifactId>
+            <version>9.2.11.v20150529</version>
         </dependency>
     </dependencies>
 

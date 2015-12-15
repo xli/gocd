@@ -153,7 +153,16 @@
                     <groupId>xalan</groupId>
                     <artifactId>xalan</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.1</version>
         </dependency>
     </dependencies>
 

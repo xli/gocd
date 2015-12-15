@@ -18,9 +18,9 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:p="http://www.springframework.org/schema/p" xmlns:task="http://www.springframework.org/schema/task"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd"
+            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd"
        default-init-method="init">
 
     <import resource="classpath:applicationContext-plugin-infra.xml"/>
@@ -44,7 +44,7 @@
     <bean id="buildLoopServer" class="com.thoughtworks.go.agent.service.HttpInvokerProxyFactoryWrapper"
           p:serviceInterface="com.thoughtworks.go.remote.BuildRepositoryRemote">
         <property name="httpInvokerRequestExecutor">
-            <bean class="org.springframework.remoting.httpinvoker.CommonsHttpInvokerRequestExecutor">
+            <bean class="org.springframework.remoting.httpinvoker.HttpComponentsHttpInvokerRequestExecutor">
                 <property name="httpClient" ref="httpClient"/>
             </bean>
         </property>
@@ -64,68 +64,11 @@
     <bean class="com.thoughtworks.go.plugin.access.scm.SCMExtension"/>
     <bean class="com.thoughtworks.go.plugin.access.pluggabletask.TaskExtension"/>
 
-    <bean id="httpClient" class="org.apache.commons.httpclient.HttpClient">
-        <constructor-arg>
-            <ref bean="httpConnectionManager"/>
-        </constructor-arg>
-    </bean>
+    <bean id="httpClient" class="com.thoughtworks.go.agent.ResetableHttpClient"/>
 
-    <bean id="httpConnectionManager" class="org.apache.commons.httpclient.MultiThreadedHttpConnectionManager"
-            p:params-ref="httpConnectionParams">
-    </bean>
-
-    <bean id="httpConnectionParams" class="org.apache.commons.httpclient.params.HttpConnectionManagerParams"
-            p:soTimeout="300000"
-            p:connectionTimeout="300000">
-    </bean>
-
-    <bean id="agentControllerLooper" class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean"
-          p:targetObject-ref="agentController"
-          p:targetMethod="loop"/>
-
-    <bean id="agentControllerPinger" class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean"
-          p:targetObject-ref="agentController"
-          p:targetMethod="ping"/>
-
-    <bean id="agentControllerInstructionExecutor" class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean"
-          p:targetObject-ref="agentController"
-          p:targetMethod="executeAgentInstruction"/>
-
-
-    <!-- worker thread -->
-    <bean name="loopThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="${agent.get.work.delay}"
-                      p:period="${agent.get.work.interval}"
-                      p:timerTask-ref="agentControllerLooper"/>
-            </list>
-        </property>
-    </bean>
-
-    <!-- ping thread -->
-    <bean name="pingThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="${agent.ping.delay}"
-                      p:period="${agent.ping.interval}"
-                      p:fixedRate="true"
-                      p:timerTask-ref="agentControllerPinger"/>
-            </list>
-        </property>
-    </bean>
-
-    <!-- instruction checker -->
-    <bean name="instructionExecuteThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="${agent.instruction.delay}"
-                      p:period="${agent.instruction.interval}"
-                      p:timerTask-ref="agentControllerInstructionExecutor"/>
-            </list>
-        </property>
-    </bean>
+    <task:scheduled-tasks>
+        <task:scheduled ref="agentController" method="loop" initial-delay="1000" fixed-delay="10000"/>
+        <task:scheduled ref="agentController" method="ping" initial-delay="${agent.ping.delay}" fixed-delay="${agent.ping.interval}"/>
+        <task:scheduled ref="agentController" method="executeAgentInstruction" initial-delay="${agent.instruction.delay}" fixed-delay="${agent.instruction.interval}"/>
+    </task:scheduled-tasks>
 </beans>

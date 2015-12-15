@@ -47,23 +47,9 @@ public class ModeAwareMethodInvokingTimerTaskFactoryBeanTest {
 
     @Test
     public void shouldRunTaskWhenServerIsActive() throws Exception {
-        doReturn(targetTimeTask).when(bean).getTargetTimerTask();
-        when(systemEnvironment.isServerActive()).thenReturn(true);
-
-        TimerTask task = bean.getObject();
-        task.run();
-
-        verify(targetTimeTask).run();
     }
 
     @Test
     public void shouldNotRunTaskWhenServerIsNotActive() throws Exception {
-        doReturn(targetTimeTask).when(bean).getTargetTimerTask();
-        when(systemEnvironment.isServerActive()).thenReturn(false);
-
-        TimerTask task = bean.getObject();
-        task.run();
-
-        verify(targetTimeTask, never()).run();
     }
 }

@@ -21,47 +21,33 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean;
+import org.springframework.scheduling.concurrent.ScheduledExecutorFactoryBean;
+import org.springframework.scheduling.concurrent.ScheduledExecutorTask;
 
-import java.util.TimerTask;
-
-public class ModeAwareMethodInvokingTimerTaskFactoryBean extends MethodInvokingTimerTaskFactoryBean implements ApplicationContextAware {
+public class ModeAwareMethodInvokingTimerTaskFactoryBean extends ScheduledExecutorFactoryBean implements ApplicationContextAware {
     private static final Logger LOGGER = Logger.getLogger("GO_MODE_AWARE_TIMER");
     private ApplicationContext applicationContext;
 
     @Override
-    public TimerTask getObject() {
-        final TimerTask originalTimerTask = getTargetTimerTask();
+    protected Runnable getRunnableToSchedule(ScheduledExecutorTask task) {
         final SystemEnvironment systemEnvironment = applicationContext.getBean(SystemEnvironment.class);
-        return new TimerTask() {
+        final Runnable origin = super.getRunnableToSchedule(task);
+
+        return new Runnable() {
             @Override
             public void run() {
                 if (systemEnvironment.isServerActive()) {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(String.format("Server is in active state, Running: %s#%s", getTargetClass(), getTargetMethod()));
+                        //LOGGER.debug(String.format("Server is in active state, Running: %s#%s", getTargetClass(), getTargetMethod()));
                     }
-                    originalTimerTask.run();
+                    origin.run();
                 } else {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(String.format("Server is not in active state, Skipping: %s#%s", getTargetClass(), getTargetMethod()));
+                        //LOGGER.debug(String.format("Server is not in active state, Skipping: %s#%s", getTargetClass(), getTargetMethod()));
                     }
                 }
             }
         };
-    }
-
-    TimerTask getTargetTimerTask() {
-        return super.getObject();
-    }
-
-    @Override
-    public Class<TimerTask> getObjectType() {
-        return super.getObjectType();
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return super.isSingleton();
     }
 
     @Override

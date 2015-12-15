@@ -29,7 +29,6 @@ import com.thoughtworks.go.plugin.infra.monitor.DefaultPluginJarLocationMonitor;
 import com.thoughtworks.go.plugin.infra.plugininfo.DefaultPluginRegistry;
 import com.thoughtworks.go.plugin.infra.plugininfo.GoPluginDescriptor;
 import com.thoughtworks.go.util.SystemEnvironment;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.hamcrest.MatcherAssert;
 import org.junit.After;
@@ -41,6 +40,7 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.osgi.framework.Bundle;
+import org.springframework.http.HttpStatus;
 
 import java.io.File;
 import java.io.IOException;
@@ -146,8 +146,8 @@ public class DefaultPluginManagerTest {
 
         assertThat(response.success(), isEmptyString());
         assertFalse(response.isSuccess());
-        assertTrue(response.errors().containsKey(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE));
-        assertThat(response.errors().get(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE), is("Please upload a jar."));
+        assertTrue(response.errors().containsKey(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value()));
+        assertThat(response.errors().get(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value()), is("Please upload a jar."));
     }
 
     @Test

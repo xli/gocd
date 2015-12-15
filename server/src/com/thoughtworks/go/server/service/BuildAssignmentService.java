@@ -121,6 +121,7 @@ public class BuildAssignmentService implements PipelineConfigChangedListener {
     }
 
     public void onTimer() {
+        System.out.println("build assignment service on time");
         reloadJobPlans();
     }
 

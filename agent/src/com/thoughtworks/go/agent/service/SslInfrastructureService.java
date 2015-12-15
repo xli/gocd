@@ -16,6 +16,7 @@
 
 package com.thoughtworks.go.agent.service;
 
+import com.thoughtworks.go.agent.ResetableHttpClient;
 import com.thoughtworks.go.config.AgentRegistrationPropertiesReader;
 import com.thoughtworks.go.config.AgentRegistry;
 import com.thoughtworks.go.config.GuidService;
@@ -26,11 +27,18 @@ import com.thoughtworks.go.server.service.AgentRuntimeInfo;
 import com.thoughtworks.go.util.SystemEnvironment;
 import com.thoughtworks.go.util.SystemUtil;
 import com.thoughtworks.go.util.URLService;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+
 import org.apache.commons.io.FileUtils;
+import org.apache.http.Consts;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,6 +47,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.thoughtworks.go.security.CertificateUtil.md5Fingerprint;
 import static com.thoughtworks.go.security.SelfSignedCertificateX509TrustManager.CRUISE_SERVER;
@@ -55,22 +65,20 @@ public class SslInfrastructureService {
     private static final int REGISTER_RETRY_INTERVAL = 5000;
     private final RemoteRegistrationRequester remoteRegistrationRequester;
     private final KeyStoreManager keyStoreManager;
-    private final HttpClient httpClient;
+    private final ResetableHttpClient httpClient;
     private AuthSSLProtocolSocketFactory protocolSocketFactory;
     private transient boolean registered = false;
-    private HttpConnectionManagerParams httpConnectionManagerParams;
 
     @Autowired
-    public SslInfrastructureService(URLService urlService, HttpClient httpClient, HttpConnectionManagerParams httpConnectionManagerParams, AgentRegistry agentRegistry) throws Exception {
-        this(new RemoteRegistrationRequester(urlService.getAgentRegistrationURL(), agentRegistry, new HttpClient()), httpClient, httpConnectionManagerParams);
+    public SslInfrastructureService(URLService urlService, ResetableHttpClient httpClient, AgentRegistry agentRegistry) throws Exception {
+        this(new RemoteRegistrationRequester(urlService.getAgentRegistrationURL(), agentRegistry, httpClient), httpClient);
     }
 
     // For mocking out remote call
-    SslInfrastructureService(RemoteRegistrationRequester requester, HttpClient httpClient, HttpConnectionManagerParams httpConnectionManagerParams)
+    SslInfrastructureService(RemoteRegistrationRequester requester, ResetableHttpClient httpClient)
             throws Exception {
         this.remoteRegistrationRequester = requester;
         this.httpClient = httpClient;
-        this.httpConnectionManagerParams = httpConnectionManagerParams;
         this.keyStoreManager = new KeyStoreManager();
         this.keyStoreManager.preload(AGENT_CERTIFICATE_FILE, AGENT_STORE_PASSWORD);
     }
@@ -81,6 +89,7 @@ public class SslInfrastructureService {
             protocolSocketFactory = new AuthSSLProtocolSocketFactory(
                     AGENT_TRUST_FILE, AGENT_CERTIFICATE_FILE, AGENT_STORE_PASSWORD);
             protocolSocketFactory.registerAsHttpsProtocol();
+            this.httpClient.setSslContext(protocolSocketFactory.getSSLContext());
         } else {
             bomb("Unable to create folder " + parentFile.getAbsolutePath());
         }
@@ -149,7 +158,7 @@ public class SslInfrastructureService {
     }
 
     public void invalidateAgentCertificate() {
-        resetHttpConnectionManager();
+        httpClient.reset();
         try {
             keyStoreManager.deleteEntry(CHAIN_ALIAS, AGENT_CERTIFICATE_FILE, AGENT_STORE_PASSWORD);
             keyStoreManager.deleteEntry(CRUISE_SERVER, AGENT_TRUST_FILE, AGENT_STORE_PASSWORD);
@@ -157,15 +166,6 @@ public class SslInfrastructureService {
             LOGGER.fatal("[Agent Registration] Error while deleting key from key store", e);
             deleteKeyStores();
         }
-    }
-
-    private void resetHttpConnectionManager() {
-        MultiThreadedHttpConnectionManager httpConnectionManager =
-                (MultiThreadedHttpConnectionManager) httpClient.getHttpConnectionManager();
-        httpConnectionManager.shutdown();
-        httpConnectionManager = new MultiThreadedHttpConnectionManager();
-        httpConnectionManager.setParams(httpConnectionManagerParams);
-        httpClient.setHttpConnectionManager(httpConnectionManager);
     }
 
     public void deleteKeyStores() {
@@ -188,21 +188,26 @@ public class SslInfrastructureService {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("[Agent Registration] Using URL %s to register.", serverUrl));
             }
-            PostMethod postMethod = new PostMethod(serverUrl);
-            postMethod.addParameter("hostname", agentHostName);
-            postMethod.addParameter("uuid", agentRegistry.uuid());
+            HttpPost postMethod = new HttpPost(serverUrl);
+
+            List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+
+            nvps.add(new BasicNameValuePair("hostname", agentHostName));
+            nvps.add(new BasicNameValuePair("uuid", agentRegistry.uuid()));
             String workingdir = SystemUtil.currentWorkingDirectory();
-            postMethod.addParameter("location", workingdir);
-            postMethod.addParameter("usablespace",
-                    String.valueOf(AgentRuntimeInfo.usableSpace(workingdir)));
-            postMethod.addParameter("operating_system", new SystemEnvironment().getOperatingSystemName());
-            postMethod.addParameter("agentAutoRegisterKey", agentAutoRegisterProperties.getAgentAutoRegisterKey());
-            postMethod.addParameter("agentAutoRegisterResources", agentAutoRegisterProperties.getAgentAutoRegisterResources());
-            postMethod.addParameter("agentAutoRegisterEnvironments", agentAutoRegisterProperties.getAgentAutoRegisterEnvironments());
-            postMethod.addParameter("agentAutoRegisterHostname", agentAutoRegisterProperties.getAgentAutoRegisterHostname());
+            nvps.add(new BasicNameValuePair("location", workingdir));
+            nvps.add(new BasicNameValuePair("usablespace",
+                    String.valueOf(AgentRuntimeInfo.usableSpace(workingdir))));
+            nvps.add(new BasicNameValuePair("operating_system", new SystemEnvironment().getOperatingSystemName()));
+            nvps.add(new BasicNameValuePair("agentAutoRegisterKey", agentAutoRegisterProperties.getAgentAutoRegisterKey()));
+            nvps.add(new BasicNameValuePair("agentAutoRegisterResources", agentAutoRegisterProperties.getAgentAutoRegisterResources()));
+            nvps.add(new BasicNameValuePair("agentAutoRegisterEnvironments", agentAutoRegisterProperties.getAgentAutoRegisterEnvironments()));
+            nvps.add(new BasicNameValuePair("agentAutoRegisterHostname", agentAutoRegisterProperties.getAgentAutoRegisterHostname()));
+
+            postMethod.setEntity(new UrlEncodedFormEntity(nvps, Consts.UTF_8));
             try {
-                httpClient.executeMethod(postMethod);
-                InputStream is = postMethod.getResponseBodyAsStream();
+                HttpResponse response = httpClient.execute(postMethod);
+                InputStream is = response.getEntity().getContent();
                 return readResponse(is);
             } finally {
                 postMethod.releaseConnection();
