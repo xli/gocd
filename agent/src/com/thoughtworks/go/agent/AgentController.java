@@ -18,6 +18,9 @@ package com.thoughtworks.go.agent;
 
 import com.thoughtworks.go.agent.service.AgentUpgradeService;
 import com.thoughtworks.go.agent.service.SslInfrastructureService;
+import com.thoughtworks.go.agent.service.WebSocketService;
+import com.thoughtworks.go.communication.Agent;
+import com.thoughtworks.go.communication.messages.AgentRuntimeInfoMessage;
 import com.thoughtworks.go.config.AgentRegistry;
 import com.thoughtworks.go.domain.exception.UnregisteredAgentException;
 import com.thoughtworks.go.plugin.access.packagematerial.PackageAsRepositoryExtension;
@@ -47,8 +50,10 @@ import java.security.GeneralSecurityException;
 
 import static com.thoughtworks.go.util.SystemUtil.currentWorkingDirectory;
 
+
 @Component
-public class AgentController {
+public class AgentController implements Agent {
+
     private static final Log LOG = LogFactory.getLog(AgentController.class);
 
     private BuildRepositoryRemote server;
@@ -67,15 +72,18 @@ public class AgentController {
     private PackageAsRepositoryExtension packageAsRepositoryExtension;
     private SCMExtension scmExtension;
     private TaskExtension taskExtension;
+    private final WebSocketService webSocketService;
 
     @Autowired
     public AgentController(BuildRepositoryRemote server, GoArtifactsManipulator manipulator, SslInfrastructureService sslInfrastructureService, AgentRegistry agentRegistry,
                            AgentUpgradeService agentUpgradeService, SubprocessLogger subprocessLogger, SystemEnvironment systemEnvironment,
-                           PluginManager pluginManager, PackageAsRepositoryExtension packageAsRepositoryExtension, SCMExtension scmExtension, TaskExtension taskExtension) {
+                           PluginManager pluginManager, PackageAsRepositoryExtension packageAsRepositoryExtension, SCMExtension scmExtension, TaskExtension taskExtension,
+                           WebSocketService webSocketService) {
         this.agentUpgradeService = agentUpgradeService;
         this.packageAsRepositoryExtension = packageAsRepositoryExtension;
         this.scmExtension = scmExtension;
         this.taskExtension = taskExtension;
+        this.webSocketService = webSocketService;
         ipAddress = SystemUtil.getFirstLocalNonLoopbackIpAddress();
         hostName = SystemUtil.getLocalhostNameOrRandomNameIfNotFound();
         this.server = server;
@@ -85,6 +93,7 @@ public class AgentController {
         this.subprocessLogger = subprocessLogger;
         this.systemEnvironment = systemEnvironment;
         PluginManagerReference.reference().setPluginManager(pluginManager);
+        webSocketService.setHost(this);
     }
 
     void init() throws IOException {
@@ -109,8 +118,11 @@ public class AgentController {
                 LOG.trace(agent + " is pinging server [" + server.toString() + "]");
 
                 agentRuntimeInfo.refreshUsableSpace();
-                instruction = server.ping(agentRuntimeInfo);
-                LOG.trace(agent + " pinged server [" + server.toString() + "]");
+                if (!webSocketService.isRunning()) {
+                    LOG.debug("No web socket client / session, start new one");
+                    webSocketService.start(sslInfrastructureService.getSSLContext());
+                }
+                webSocketService.send(new AgentRuntimeInfoMessage(agentRuntimeInfo));
             }
         } catch (Throwable e) {
             LOG.error("Error occurred when agent tried to ping server: ", e);
@@ -128,7 +140,6 @@ public class AgentController {
             }
             agentUpgradeService.checkForUpgrade();
             sslInfrastructureService.registerIfNecessary();
-            retrieveCookieIfNecessary();
             retrieveWork();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("[Agent Loop] Successfully retrieved work.");
@@ -144,15 +155,6 @@ public class AgentController {
             } else {
                 LOG.error("[Agent Loop] Error occurred during loop: ", e);
             }
-        }
-    }
-
-    private void retrieveCookieIfNecessary() {
-        if (!agentRuntimeInfo.hasCookie() && sslInfrastructureService.isRegistered()) {
-            LOG.info("About to get cookie from the server.");
-            String cookie = server.getCookie(agentIdentifier(), agentRuntimeInfo.getLocation());
-            agentRuntimeInfo.setCookie(cookie);
-            LOG.info(String.format("Got cookie: %s ", cookie));
         }
     }
 
@@ -209,4 +211,14 @@ public class AgentController {
         }
     }
 
+    @Override
+    public void setCookie(String cookie) {
+        LOG.info(String.format("Got cookie: %s ", cookie));
+        agentRuntimeInfo.setCookie(cookie);
+    }
+
+    @Override
+    public void setAgentInstruction(AgentInstruction instruction) {
+        this.instruction = instruction;
+    }
 }

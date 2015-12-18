@@ -35,14 +35,12 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,6 +91,13 @@ public class SslInfrastructureService {
         } else {
             bomb("Unable to create folder " + parentFile.getAbsolutePath());
         }
+    }
+
+    public SSLContext getSSLContext() {
+        if (protocolSocketFactory == null) {
+            return null;
+        }
+        return protocolSocketFactory.getSSLContext();
     }
 
     public void registerIfNecessary() throws Exception {

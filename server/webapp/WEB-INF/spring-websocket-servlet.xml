@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- *************************GO-LICENSE-START******************************
+ * Copyright 2015 ThoughtWorks, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *************************GO-LICENSE-END******************************* -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:websocket="http://www.springframework.org/schema/websocket"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/websocket
+        http://www.springframework.org/schema/websocket/spring-websocket.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <websocket:handlers>
+        <websocket:mapping path="/agent" handler="agentHandlerDecorator"/>
+        <websocket:handshake-handler ref="handshakeHandler"/>
+    </websocket:handlers>
+
+    <bean id="agentWebSocketHandler" class="com.thoughtworks.go.server.websocket.AgentWebSocketHandler">
+        <constructor-arg ref="buildRepositoryImpl"/>
+    </bean>
+    <bean id="agentHandlerDecorator" class="org.springframework.web.socket.handler.LoggingWebSocketHandlerDecorator">
+        <constructor-arg ref="agentWebSocketHandler"/>
+    </bean>
+
+    <bean id="handshakeHandler" class="org.springframework.web.socket.server.support.DefaultHandshakeHandler">
+        <constructor-arg ref="upgradeStrategy"/>
+    </bean>
+
+    <bean id="upgradeStrategy" class="org.springframework.web.socket.server.jetty.JettyRequestUpgradeStrategy">
+        <constructor-arg ref="serverFactory"/>
+    </bean>
+
+    <bean id="serverFactory" class="org.eclipse.jetty.websocket.server.WebSocketServerFactory">
+        <constructor-arg>
+            <bean class="org.eclipse.jetty.websocket.api.WebSocketPolicy">
+                <constructor-arg value="SERVER"/>
+                <property name="idleTimeout" value="600000"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <context:annotation-config/>
+
+    <bean id="buildRepositoryRemoteImpl" class="com.thoughtworks.go.remote.BuildRepositoryRemoteImpl" />
+    <bean id="buildRepositoryImpl" class="com.thoughtworks.go.server.messaging.BuildRepositoryMessageProducer" autowire="constructor"/>
+
+</beans>

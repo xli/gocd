@@ -40,9 +40,16 @@
         <db.name>cruise</db.name>
         <db.port></db.port>
         <hibernate.version>3.6.10.Final</hibernate.version>
+        <jetty.version>9.2.11.v20150529</jetty.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-server</artifactId>
+            <version>${jetty.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.thoughtworks.go</groupId>
             <artifactId>database</artifactId>
@@ -656,16 +663,6 @@
             <artifactId>jsoup</artifactId>
             <version>1.8.1</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-servlet</artifactId>
-            <version>9.2.11.v20150529</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-client</artifactId>
-            <version>9.2.11.v20150529</version>
         </dependency>
     </dependencies>
 
