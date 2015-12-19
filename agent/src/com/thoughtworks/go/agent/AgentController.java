@@ -134,76 +134,6 @@ public class AgentController implements Agent {
         return new AgentIdentifier(hostName, ipAddress, agentRegistry.uuid());
     }
 
-    public void loop() {
-        try {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("[Agent Loop] Trying to retrieve work.");
-            }
-            retrieveWork();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("[Agent Loop] Successfully retrieved work.");
-            }
-
-        } catch (Exception e) {
-            if (isCausedBySecurity(e)) {
-                handleIfSecurityException(e);
-            } else if (e instanceof DataRetrievalFailureException) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("[Agent Loop] Error occurred during loop: ", e);
-                }
-            } else {
-                LOG.error("[Agent Loop] Error occurred during loop: ", e);
-            }
-        }
-    }
-
-    private void handleIfSecurityException(Exception e) {
-        if (!isCausedBySecurity(e)) {
-            return;
-        }
-        sslInfrastructureService.invalidateAgentCertificate();
-        LOG.error("There has been a problem with one of Go's SSL certificates." +
-                " This can be caused by a man-in-the-middle attack, or by pointing the agent to a new server, or by" +
-                " deleting and re-installing Go Server. Go will ask for a new certificate. If this" +
-                " fails to solve the problem, try deleting config/trust.jks in Go Agent's home directory.",
-                e);
-    }
-
-    void retrieveWork() {
-        AgentIdentifier agentIdentifier = agentIdentifier();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(String.format("[Agent Loop] %s is checking for work from Go", agentIdentifier));
-        }
-        Work work;
-        try {
-            agentRuntimeInfo.idle();
-            work = server.getWork(agentRuntimeInfo);
-            if (!(work instanceof NoWork)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(String.format("[Agent Loop] Got work from server: [%s]", work.description()));
-                }
-            }
-            runner = new JobRunner();
-            runner.run(work, agentIdentifier, server, manipulator, agentRuntimeInfo, packageAsRepositoryExtension, scmExtension, taskExtension);
-        } catch (UnregisteredAgentException e) {
-            LOG.warn(String.format("[Agent Loop] Invalid agent certificate with fingerprint %s. Registering with server on next iteration.", e.getUuid()));
-            sslInfrastructureService.invalidateAgentCertificate();
-        } finally {
-            agentRuntimeInfo.idle();
-        }
-    }
-
-    boolean isCausedBySecurity(Throwable e) {
-        if (e == null) {
-            return false;
-        }
-        if (e instanceof GeneralSecurityException) {
-            return true;
-        } else {
-            return isCausedBySecurity(e.getCause());
-        }
-    }
-
     @Override
     public void setCookie(String cookie) {
         LOG.info(String.format("Got cookie: %s ", cookie));
@@ -214,6 +144,21 @@ public class AgentController implements Agent {
     public void setAgentInstruction(AgentInstruction instruction) {
         if (runner != null) {
             runner.handleInstruction(instruction, agentRuntimeInfo);
+        }
+    }
+
+    @Override
+    public void doWork(Work work) {
+        AgentIdentifier agentIdentifier = agentIdentifier();
+        LOG.debug(String.format("%s got work from server: [%s]", agentIdentifier, work.description()));
+        try {
+            runner = new JobRunner();
+            runner.run(work, agentIdentifier, server, manipulator, agentRuntimeInfo, packageAsRepositoryExtension, scmExtension, taskExtension);
+        } catch (UnregisteredAgentException e) {
+            LOG.warn(String.format("[Agent Loop] Invalid agent certificate with fingerprint %s. Registering with server on next iteration.", e.getUuid()));
+            sslInfrastructureService.invalidateAgentCertificate();
+        } finally {
+            agentRuntimeInfo.idle();
         }
     }
 }

@@ -25,6 +25,7 @@ import com.thoughtworks.go.remote.work.*;
 import com.thoughtworks.go.server.materials.StaleMaterialsOnBuildCause;
 import com.thoughtworks.go.server.service.builders.BuilderFactory;
 import com.thoughtworks.go.server.transaction.TransactionTemplate;
+import com.thoughtworks.go.server.websocket.AgentWebSocketHandler;
 import com.thoughtworks.go.util.TimeProvider;
 import org.apache.commons.collections.Closure;
 import org.apache.log4j.Logger;
@@ -32,9 +33,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -61,6 +62,7 @@ public class BuildAssignmentService implements PipelineConfigChangedListener {
     private List<JobPlan> jobPlans = new ArrayList<JobPlan>();
     private final UpstreamPipelineResolver resolver;
     private final BuilderFactory builderFactory;
+    private AgentWebSocketHandler agentWebSocketHandler;
 
     @Autowired
     public BuildAssignmentService(GoConfigService goConfigService, JobInstanceService jobInstanceService, ScheduleService scheduleService,
@@ -122,6 +124,28 @@ public class BuildAssignmentService implements PipelineConfigChangedListener {
 
     public void onTimer() {
         reloadJobPlans();
+        if (agentWebSocketHandler == null) {
+            return;
+        }
+        Collection<String> agents = agentWebSocketHandler.connectedAgentUUIds();
+        for (String agentUUId : agents) {
+            AgentInstance agent = agentService.findAgentAndRefreshStatus(agentUUId);
+            if (agent.isRegistered() && !agent.isDisabled() && agent.isIdle()) {
+                    //check if agent already has assigned build, if so, reschedule it
+//                    scheduleService.rescheduleAbandonedBuildIfNecessary(agent.getAgentIdentifier());
+                final JobPlan job = findMatchingJob(agent);
+                if (job != null) {
+                    Work buildWork = createWork(agent, job);
+                    // assign work to agent before we update building info on server side
+                    // so that agent ping won't cause inconsistent problem
+                    agentWebSocketHandler.assignWork(agentUUId, buildWork);
+                    AgentBuildingInfo buildingInfo = new AgentBuildingInfo(job.getIdentifier().buildLocatorForDisplay(),
+                            job.getIdentifier().buildLocator());
+                    agentService.building(agent.getUuid(), buildingInfo);
+                    LOGGER.info(format("[Agent Assignment] Assigned job [%s] to agent [%s]", job.getIdentifier(), agent.agentConfig().getAgentIdentifier()));
+                }
+            }
+        }
     }
 
     private void reloadJobPlans() {
@@ -233,5 +257,9 @@ public class BuildAssignmentService implements PipelineConfigChangedListener {
             throw e;
         }
 
+    }
+
+    public void setAgentWebSocketHandler(AgentWebSocketHandler agentWebSocketHandler) {
+        this.agentWebSocketHandler = agentWebSocketHandler;
     }
 }
