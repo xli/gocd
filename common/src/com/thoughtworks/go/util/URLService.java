@@ -60,7 +60,8 @@ public class URLService implements ServerUrlGenerator{
     public String getWebSocketBaseUrl() {
         try {
             URI uri = new URI(baseRemotingURL);
-            StringBuffer ret = new StringBuffer("wss://");
+            String scheme = "http".equalsIgnoreCase(uri.getScheme()) ? "ws" : "wss";
+            StringBuffer ret = new StringBuffer(scheme + "://");
             ret.append(uri.getHost()).append(":").append(uri.getPort());
             if (uri.getPath() != null) {
                 ret.append(uri.getPath());

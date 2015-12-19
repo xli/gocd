@@ -68,8 +68,7 @@
     <bean id="httpClient" class="com.thoughtworks.go.agent.ResetableHttpClient"/>
 
     <task:scheduled-tasks>
-        <task:scheduled ref="agentController" method="loop" initial-delay="1000" fixed-delay="10000"/>
         <task:scheduled ref="agentController" method="ping" initial-delay="${agent.ping.delay}" fixed-delay="${agent.ping.interval}"/>
-        <task:scheduled ref="agentController" method="executeAgentInstruction" initial-delay="${agent.instruction.delay}" fixed-delay="${agent.instruction.interval}"/>
+        <task:scheduled ref="agentController" method="loop" initial-delay="${agent.get.work.delay}" fixed-delay="${agent.get.work.interval}"/>
     </task:scheduled-tasks>
 </beans>

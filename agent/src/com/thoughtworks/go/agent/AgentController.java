@@ -63,7 +63,6 @@ public class AgentController implements Agent {
 
     private final String hostName;
     private final String ipAddress;
-    private AgentInstruction instruction = new AgentInstruction(false);
     private JobRunner runner;
     private AgentRuntimeInfo agentRuntimeInfo;
     private SubprocessLogger subprocessLogger;
@@ -113,7 +112,9 @@ public class AgentController implements Agent {
 
     public void ping() {
         try {
+            sslInfrastructureService.registerIfNecessary();
             if (sslInfrastructureService.isRegistered()) {
+                agentUpgradeService.checkForUpgrade();
                 AgentIdentifier agent = agentIdentifier();
                 LOG.trace(agent + " is pinging server [" + server.toString() + "]");
 
@@ -138,8 +139,6 @@ public class AgentController implements Agent {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("[Agent Loop] Trying to retrieve work.");
             }
-            agentUpgradeService.checkForUpgrade();
-            sslInfrastructureService.registerIfNecessary();
             retrieveWork();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("[Agent Loop] Successfully retrieved work.");
@@ -194,12 +193,6 @@ public class AgentController implements Agent {
         }
     }
 
-    public void executeAgentInstruction() {
-        if (runner != null) {
-            runner.handleInstruction(instruction, agentRuntimeInfo);
-        }
-    }
-
     boolean isCausedBySecurity(Throwable e) {
         if (e == null) {
             return false;
@@ -219,6 +212,8 @@ public class AgentController implements Agent {
 
     @Override
     public void setAgentInstruction(AgentInstruction instruction) {
-        this.instruction = instruction;
+        if (runner != null) {
+            runner.handleInstruction(instruction, agentRuntimeInfo);
+        }
     }
 }
