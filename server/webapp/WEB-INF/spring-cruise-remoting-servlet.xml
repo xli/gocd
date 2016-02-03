@@ -71,99 +71,99 @@
           p:targetMethod="onTimer"/>
 
     <!-- auto build cause producing thread -->
-    <bean name="produceBuildCausesThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="${cruise.produce.build.cause.delay}"
-                      p:period="${cruise.produce.build.cause.interval}"
-                      p:timerTask-ref="produceBuildCausesTask"/>
-            </list>
-        </property>
-    </bean>
+    <!--<bean name="produceBuildCausesThread" class="org.springframework.scheduling.timer.TimerFactoryBean">-->
+        <!--<property name="scheduledTimerTasks">-->
+            <!--<list>-->
+                <!--<bean class="org.springframework.scheduling.timer.ScheduledTimerTask"-->
+                      <!--p:delay="${cruise.produce.build.cause.delay}"-->
+                      <!--p:period="${cruise.produce.build.cause.interval}"-->
+                      <!--p:timerTask-ref="produceBuildCausesTask"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
 
-    <bean name="materialUpdateThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="${cruise.material.update.delay}"
-                      p:period="${cruise.material.update.interval}"
-                      p:timerTask-ref="materialUpdaterExecutor"/>
-            </list>
-        </property>
-    </bean>
+    <!--<bean name="materialUpdateThread" class="org.springframework.scheduling.timer.TimerFactoryBean">-->
+        <!--<property name="scheduledTimerTasks">-->
+            <!--<list>-->
+                <!--<bean class="org.springframework.scheduling.timer.ScheduledTimerTask"-->
+                      <!--p:delay="${cruise.material.update.delay}"-->
+                      <!--p:period="${cruise.material.update.interval}"-->
+                      <!--p:timerTask-ref="materialUpdaterExecutor"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
 
     <!--Build Cause consume thread-->
-    <bean name="consumeBuildCausesThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="10000"
-                      p:period="${cruise.buildCause.consumer.interval}"
-                      p:timerTask-ref="consumeBuildCausesTask"/>
-            </list>
-        </property>
-    </bean>
+    <!--<bean name="consumeBuildCausesThread" class="org.springframework.scheduling.timer.TimerFactoryBean">-->
+        <!--<property name="scheduledTimerTasks">-->
+            <!--<list>-->
+                <!--<bean class="org.springframework.scheduling.timer.ScheduledTimerTask"-->
+                      <!--p:delay="10000"-->
+                      <!--p:period="${cruise.buildCause.consumer.interval}"-->
+                      <!--p:timerTask-ref="consumeBuildCausesTask"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
 
     <!-- reschedule a building job whose agent has not pinged the server in a while -->
-    <bean name="rescheduleHungBuildThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="3000"
-                      p:period="${cruise.reschedule.hung.builds.interval}"
-                      p:timerTask-ref="rescheduleHungBuildTask"/>
-            </list>
-        </property>
-    </bean>
+    <!--<bean name="rescheduleHungBuildThread" class="org.springframework.scheduling.timer.TimerFactoryBean">-->
+        <!--<property name="scheduledTimerTasks">-->
+            <!--<list>-->
+                <!--<bean class="org.springframework.scheduling.timer.ScheduledTimerTask"-->
+                      <!--p:delay="3000"-->
+                      <!--p:period="${cruise.reschedule.hung.builds.interval}"-->
+                      <!--p:timerTask-ref="rescheduleHungBuildTask"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
 
     <!-- cancel a hung job thread -->
-    <bean name="cancelHungJobThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="3000"
-                      p:period="${cruise.cancel.hung.jobs.interval}"
-                      p:timerTask-ref="cancelHungJob"/>
-            </list>
-        </property>
-    </bean>
+    <!--<bean name="cancelHungJobThread" class="org.springframework.scheduling.timer.TimerFactoryBean">-->
+        <!--<property name="scheduledTimerTasks">-->
+            <!--<list>-->
+                <!--<bean class="org.springframework.scheduling.timer.ScheduledTimerTask"-->
+                      <!--p:delay="3000"-->
+                      <!--p:period="${cruise.cancel.hung.jobs.interval}"-->
+                      <!--p:timerTask-ref="cancelHungJob"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
 
     <!-- buildAssignmentServiceRefreshExecutorThread -->
-    <bean name="buildAssignmentServiceRefreshExecutorThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="10000"
-                      p:period="${cruise.build.assignment.service.interval}"
-                      p:timerTask-ref="buildAssignmentServiceRefreshExecutor"/>
-            </list>
-        </property>
-    </bean>
+    <!--<bean name="buildAssignmentServiceRefreshExecutorThread" class="org.springframework.scheduling.timer.TimerFactoryBean">-->
+        <!--<property name="scheduledTimerTasks">-->
+            <!--<list>-->
+                <!--<bean class="org.springframework.scheduling.timer.ScheduledTimerTask"-->
+                      <!--p:delay="10000"-->
+                      <!--p:period="${cruise.build.assignment.service.interval}"-->
+                      <!--p:timerTask-ref="buildAssignmentServiceRefreshExecutor"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
 
     <!-- cachedGoConfigRefreshExecutorThread -->
-    <bean name="cachedGoConfigRefreshExecutorThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="5000"
-                      p:period="${cruise.config.refresh.interval}"
-                      p:timerTask-ref="cachedGoConfigRefreshExecutor"/>
-            </list>
-        </property>
-    </bean>
+    <!--<bean name="cachedGoConfigRefreshExecutorThread" class="org.springframework.scheduling.timer.TimerFactoryBean">-->
+        <!--<property name="scheduledTimerTasks">-->
+            <!--<list>-->
+                <!--<bean class="org.springframework.scheduling.timer.ScheduledTimerTask"-->
+                      <!--p:delay="5000"-->
+                      <!--p:period="${cruise.config.refresh.interval}"-->
+                      <!--p:timerTask-ref="cachedGoConfigRefreshExecutor"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
 
     <!-- goDiskSpaceMonitorThread -->
-    <bean name="goDiskSpaceMonitorThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="5000"
-                      p:period="${cruise.disk.space.check.interval}"
-                      p:timerTask-ref="checkDiskSpaceTask"/>
-            </list>
-        </property>
-    </bean>
+    <!--<bean name="goDiskSpaceMonitorThread" class="org.springframework.scheduling.timer.TimerFactoryBean">-->
+        <!--<property name="scheduledTimerTasks">-->
+            <!--<list>-->
+                <!--<bean class="org.springframework.scheduling.timer.ScheduledTimerTask"-->
+                      <!--p:delay="5000"-->
+                      <!--p:period="${cruise.disk.space.check.interval}"-->
+                      <!--p:timerTask-ref="checkDiskSpaceTask"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
 
     <bean id="buildRepositoryRemoteImpl" class="com.thoughtworks.go.remote.BuildRepositoryRemoteImpl" />
 
@@ -173,14 +173,14 @@
           p:targetObject-ref="agentService"
           p:targetMethod="refresh"/>
 
-    <bean name="agentServiceRefreshThread" class="org.springframework.scheduling.timer.TimerFactoryBean">
-        <property name="scheduledTimerTasks">
-            <list>
-                <bean class="org.springframework.scheduling.timer.ScheduledTimerTask"
-                      p:delay="10000"
-                      p:period="${cruise.agent.service.refresh.interval}"
-                      p:timerTask-ref="agentServiceRefreshExecutor"/>
-            </list>
-        </property>
-    </bean>
+    <!--<bean name="agentServiceRefreshThread" class="org.springframework.scheduling.timer.TimerFactoryBean">-->
+        <!--<property name="scheduledTimerTasks">-->
+            <!--<list>-->
+                <!--<bean class="org.springframework.scheduling.timer.ScheduledTimerTask"-->
+                      <!--p:delay="10000"-->
+                      <!--p:period="${cruise.agent.service.refresh.interval}"-->
+                      <!--p:timerTask-ref="agentServiceRefreshExecutor"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
 </beans>
