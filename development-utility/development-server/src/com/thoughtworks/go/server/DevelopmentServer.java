@@ -61,7 +61,7 @@ public class DevelopmentServer {
         }
         new ZipUtil().zipFolderContents(pluginsDist, new File(classpath(), "plugins.zip"));
         GoServer server = new GoServer();
-        systemEnvironment.setProperty(GoConstants.USE_COMPRESSED_JAVASCRIPT, Boolean.toString(false));
+        systemEnvironment.setProperty(GoConstants.USE_COMPRESSED_JAVASCRIPT, Boolean.toString(true));
         try {
             server.startServer();
 

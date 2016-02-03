@@ -31,8 +31,8 @@ Go::Application.configure do
   config.java_services_cache = :ServiceCache
   config.fail_if_unable_to_register_renderer = false
 
-  config.log_level = :debug
-  org.apache.log4j.Logger.getLogger("com.thoughtworks.go.server.Rails").setLevel(org.apache.log4j.Level::DEBUG)
+  config.log_level = :error
+  org.apache.log4j.Logger.getLogger("com.thoughtworks.go.server.Rails").setLevel(org.apache.log4j.Level::ERROR)
 end
 
 if defined?(JasmineRails) && File.exist?(Rails.root.join('spec/new_javascripts'))
